@@ -51,6 +51,8 @@ AI_CLASS = None
 # GAME_TYPE = None
 GAME_TYPE = '1'
 
+REPEAT = 1
+
 try:
     from settings_local import *
 except ImportError:

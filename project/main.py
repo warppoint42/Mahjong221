@@ -43,6 +43,11 @@ def parse_args_and_set_up_settings():
                       default=settings.AI_PACKAGE,
                       help='AI package')
 
+    parser.add_option('-r', '--repeat',
+                      type='int',
+                      default=settings.REPEAT,
+                      help='Times to repeat, default is 0')
+
     opts, _ = parser.parse_args()
 
     settings.USER_ID = opts.user_id
@@ -50,6 +55,7 @@ def parse_args_and_set_up_settings():
     settings.LOBBY = opts.lobby
     settings.WAITING_GAME_TIMEOUT_MINUTES = opts.timeout
     settings.AI_PACKAGE = opts.ai
+    settings.REPEAT = opts.repeat
 
     # it is important to reload bot class
     settings.load_ai_class()
