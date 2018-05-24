@@ -63,7 +63,11 @@ class ImplementationAI(InterfaceAI):
         return discard_136
 
     def should_call_riichi(self):
-        return False
+        if len(self.player.open_hand_34_tiles) != 0:
+            return False
+        tiles_34 = TilesConverter.to_34_array(self.player.tiles)
+        shanten = self.shanten.calculate_shanten(tiles_34, None)
+        return shanten == 0
 
     def should_call_win(self, tile, enemy_seat):
         return True
