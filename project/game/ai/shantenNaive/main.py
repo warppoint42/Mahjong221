@@ -5,7 +5,7 @@ import copy
 
 from game.ai.base.main import InterfaceAI
 from mahjong.shanten import Shanten
-from mahjong.agari import Agari
+# from mahjong.agari import Agari
 from mahjong.tile import TilesConverter
 from mahjong.meld import Meld
 from mahjong.utils import is_man, is_pin, is_sou, is_pon, is_chi
@@ -30,11 +30,15 @@ class ImplementationAI(InterfaceAI):
     def __init__(self, player):
         super(ImplementationAI, self).__init__(player)
         self.shanten = Shanten()
-        self.agari = Agari()
+        # self.agari = Agari()
         self.hand_divider = HandDivider()
 
     # TODO: Merge all discard functions into one to prevent code reuse and unnecessary duplication of variables
     def discard_tile(self, discard_tile):
+
+        if discard_tile is not None:
+            return discard_tile
+
         tiles_34 = TilesConverter.to_34_array(self.player.tiles)
         closed_tiles_34 = TilesConverter.to_34_array(self.player.closed_hand)
         # is_agari = self.agari.is_agari(tiles_34, self.player.open_hand_34_tiles)
@@ -64,20 +68,21 @@ class ImplementationAI(InterfaceAI):
             logger.debug('Greedy search or tile conversion failed')
             discard_136 = random.randrange(len(self.player.tiles) - 1)
             discard_136 = self.player.tiles[discard_136]
-        logger.debug('Shanten after discard:' + str(shanten))
+        logger.info('Shanten after discard:' + str(shanten))
         return discard_136
 
     def should_call_riichi(self):
         if len(self.player.open_hand_34_tiles) != 0:
             return False
-        tiles_34 = TilesConverter.to_34_array(self.player.tiles)
-        shanten = self.shanten.calculate_shanten(tiles_34, None)
-        return shanten == 0
+        return True
+        # tiles_34 = TilesConverter.to_34_array(self.player.tiles)
+        # shanten = self.shanten.calculate_shanten(tiles_34, None)
+        # logger.debug('Riichi check, shanten = ' + str(shanten))
+        # return shanten == 0
 
     def should_call_win(self, tile, enemy_seat):
         return True
 
-    # TODO: Verify that this method actually works
     def should_call_kan(self, tile, open_kan):
         """
         When bot can call kan or chankan this method will be called

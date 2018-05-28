@@ -322,6 +322,7 @@ class TenhouClient(Client):
                 if '<AGARI' in message or '<RYUUKYOKU' in message:
                     sleep(TenhouClient.SLEEP_BETWEEN_ACTIONS * 7)
                     self._send_message('<NEXTREADY />')
+                    logger.debug(message)
 
                 # set was called
                 if '<N who=' in message:
@@ -370,6 +371,10 @@ class TenhouClient(Client):
                     player_seat = self.decoder.get_enemy_seat(message)
 
                     self.table.add_discarded_tile(player_seat, tile, if_tsumogiri)
+
+                    logger.info('Player ' + str(player_seat) + ' discarded tile : {}'.format(
+                        TilesConverter.to_one_line_string([tile])) + ', tsumogiri = ' + str(if_tsumogiri)
+                    )
 
                     # open hand suggestions
                     if 't=' in message:
@@ -466,13 +471,13 @@ class TenhouClient(Client):
 
     def _send_message(self, message):
         # tenhou requires an empty byte in the end of each sending message
-        logger.debug('Send: {}'.format(message))
+        # logger.debug('Send: {}'.format(message))
         message += '\0'
         self.socket.sendall(message.encode())
 
     def _read_message(self):
         message = self.socket.recv(2048)
-        logger.debug('Get: {}'.format(message.decode('utf-8').replace('\x00', ' ')))
+        # logger.debug('Get: {}'.format(message.decode('utf-8').replace('\x00', ' ')))
         return message.decode('utf-8')
 
     def _get_multiple_messages(self):
