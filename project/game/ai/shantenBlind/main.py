@@ -340,6 +340,7 @@ class ImplementationAI(InterfaceAI):
                 tile
             ]
 
+            discard_136 = TilesConverter.find_34_tile_in_136_array(discard_136 // 4, closed_hand)
             meld.tiles = sorted(tiles_136)
             return meld, discard_136
 

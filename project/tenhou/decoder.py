@@ -219,6 +219,20 @@ class TenhouDecoder(object):
         meld.type = Meld.NUKI
         meld.tiles = [data >> 8]
 
+    def parse_won_fed(self, message):
+        who = int(self.get_attribute_content(message, 'who'))
+        fromWho = int(self.get_attribute_content(message, 'fromWho'))
+
+        won, fed = 0, 0
+
+        if who == 0:
+            won = 1
+        if fromWho == 0 and won == 0:
+            fed = 1
+
+        return won, fed
+
+
     def generate_auth_token(self, auth_string):
         translation_table = [63006, 9570, 49216, 45888, 9822, 23121, 59830, 51114, 54831, 4189, 580, 5203, 42174, 59972,
                              55457, 59009, 59347, 64456, 8673, 52710, 49975, 2006, 62677, 3463, 17754, 5357]
