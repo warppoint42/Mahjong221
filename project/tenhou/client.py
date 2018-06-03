@@ -3,6 +3,7 @@ import datetime
 import logging
 import socket
 import csv
+import getpass
 from threading import Thread
 from time import sleep
 from urllib.parse import quote
@@ -40,11 +41,14 @@ class TenhouClient(Client):
     _rating_string = None
     _socket_mock = None
 
+    user = ''
+
     def __init__(self, socket_mock=None):
         super().__init__()
         self.statistics = Statistics()
         self._socket_mock = socket_mock
         self.game_id = str(self.uniqid())
+        self.user = getpass.getuser()
 
     def uniqid(self):
         from time import time
@@ -347,7 +351,7 @@ class TenhouClient(Client):
                         row.append(1)
                     else:
                         row.append(0)
-                    with open('roundlog.csv', 'a') as f:
+                    with open(self.user + 'roundlog.csv', 'a') as f:
                         w = csv.writer(f)
                         w.writerow(row)
 
@@ -469,7 +473,7 @@ class TenhouClient(Client):
 
         row = [settings.AI_CLASS.version, self.game_id]
         row.extend(self.table.get_players_sorted_by_scores())
-        with open('owari.csv', 'a') as f:
+        with open(self.user + 'owari.csv', 'a') as f:
             w = csv.writer(f)
             w.writerow(row)
 
