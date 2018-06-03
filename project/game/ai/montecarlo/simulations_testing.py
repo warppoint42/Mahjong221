@@ -53,6 +53,72 @@ def simulate_naive(hand, hand_open, unaccounted_tiles, turn):
         hand[draw_tile] +=1
     return False
 
+def simulate_naive2(hand, hand_open, unaccounted_tiles, turn):
+    """
+    #naive simulation
+
+    hand, hand_open -- hand in 34 format
+    unaccounted_tiles -- all the unused tiles in 34 format
+    turn -- a number from 0-3 (0 is the player)
+    """
+    shanten = Shanten()
+    hand_changes = np.array([0]*34)
+    unaccounted_changes = np.array([0]*34)
+    tiles_left = sum(unaccounted_tiles)
+    unaccounted_nonzero = np.nonzero(unaccounted_tiles)
+    #14 in dead wall 13*3= 39 in other hand -> total 53
+    for i in range(tiles_left - 53):
+        if shanten.calculate_shanten(hand, hand_open) <= 0:#if tenpai
+            hand += hand_changes
+            unaccounted_tiles += unaccounted_changes
+            return True
+        hand_nonzero = np.nonzero(hand)[0] #discard something random
+        discard = random.choice(hand_nonzero)
+        hand[discard] -= 1
+        hand_changes[discard] += 1
+        unaccounted_nonzero = np.nonzero(unaccounted_tiles)[0] #get a random card
+        draw_tile = random.choice(unaccounted_nonzero)
+        unaccounted_tiles[draw_tile] -= 1
+        unaccounted_changes[draw_tile] += 1
+        hand[draw_tile] +=1
+        hand_changes[draw_tile] -=1
+    hand += hand_changes
+    unaccounted_tiles += unaccounted_changes
+    return False
+
+def simulate_naive3(hand, hand_open, unaccounted_tiles, turn):
+    """
+    #naive simulation
+
+    hand, hand_open -- hand in 34 format
+    unaccounted_tiles -- all the unused tiles in 34 format
+    turn -- a number from 0-3 (0 is the player)
+    """
+    agari = Agari()
+    hand_changes = np.array([0]*34)
+    unaccounted_changes = np.array([0]*34)
+    tiles_left = sum(unaccounted_tiles)
+    unaccounted_nonzero = np.nonzero(unaccounted_tiles)
+    #14 in dead wall 13*3= 39 in other hand -> total 53
+    for i in range(tiles_left - 53):
+        if agari.is_agari(hand, hand_open):
+            hand += hand_changes
+            unaccounted_tiles += unaccounted_changes
+            return True
+        hand_nonzero = np.nonzero(hand)[0] #discard something random
+        discard = random.choice(hand_nonzero)
+        hand[discard] -= 1
+        hand_changes[discard] += 1
+        unaccounted_nonzero = np.nonzero(unaccounted_tiles)[0] #get a random card
+        draw_tile = random.choice(unaccounted_nonzero)
+        unaccounted_tiles[draw_tile] -= 1
+        unaccounted_changes[draw_tile] += 1
+        hand[draw_tile] +=1
+        hand_changes[draw_tile] -=1
+    hand += hand_changes
+    unaccounted_tiles += unaccounted_changes
+    return False
+
 def simulate_weighted(hand, hand_open, unaccounted_tiles, turn):
     """
     Does a weighted simulation
@@ -113,6 +179,12 @@ def simulate_weighted2(hand, hand_open, unaccounted_tiles, turn):
         hand[draw_tile] +=1
     return False
 
+if __name__ == "__main__":
+    hand = np.array(TilesConverter.string_to_34_array(man='284', pin='24667',sou='1136', honors='77'))
+    unaccounted_tiles = np.array([4]*34)-hand 
+    print(sum(simulate_naive(hand, [], unaccounted_tiles, 0) for _ in range(100)))
+    #print(simulate_naive3(hand, [], unaccounted_tiles, 0))
+
 #heuristics    
 #keep more in the center
 #throw away non consecutive
@@ -138,4 +210,6 @@ def simulate_weighted2(hand, hand_open, unaccounted_tiles, turn):
 #    self._make_meld(Meld.CHI, pin='123'),
 #    self._make_meld(Meld.CHI, pin='123'),
 #]
+    
+
     
