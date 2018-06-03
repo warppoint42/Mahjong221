@@ -23,7 +23,7 @@ class ImplementationAI(InterfaceAI):
     Always calls wins, never calls riichi.
     TODO: Everything
     """
-    version = 'shantenBlind'
+    version = 'shantenMCS'
 
     shanten = None
     agari = None
@@ -82,6 +82,8 @@ class ImplementationAI(InterfaceAI):
         (minshanten, discard_34) = min(results)
 
         results2 = []
+        unaccounted = (np.array([4]*34) - closed_tiles_34)\
+            - TilesConverter.to_34_array(self.table.revealed_tiles)
 
         self.shdict = {}
         for shanten, tile in results:
@@ -398,12 +400,14 @@ class ImplementationAI(InterfaceAI):
         (minshanten, discard_34) = min(results)
 
         results2 = []
+        unaccounted = (np.array([4]*34) - closed_tiles_34)\
+            - TilesConverter.to_34_array(self.table.revealed_tiles)
 
         self.shdict = {}
         for shanten, tile in results:
             if shanten != minshanten:
                 continue
-            h = sum(self.simulate_single(closed_tiles_34, self.player.open_hand_34_tiles, unaccounted) for _ in range(200))
+            h = sum(self.simulate_single(closed_tiles_34, open_hand_34, unaccounted) for _ in range(200))
             results2.append((h, tile))
 
         (h, discard_34) = min(results2)
