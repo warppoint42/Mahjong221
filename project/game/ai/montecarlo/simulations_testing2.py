@@ -76,7 +76,7 @@ def discard(hand, hand_open):
 if __name__ == "__main__":
     #hand = np.array(TilesConverter.string_to_34_array(man='284', pin='24667',sou='113', honors='77'))
     #hand = np.array(TilesConverter.string_to_34_array(man='189', pin='2378',sou='2345', honors='15'))
-    hand = np.array(TilesConverter.string_to_34_array(pin='268',man='2579',sou='258', honors='135'))
+    #hand = np.array(TilesConverter.string_to_34_array(pin='268',man='2579',sou='258', honors='135'))
 #    
 #    
 #    #similar hands
