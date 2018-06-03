@@ -5,12 +5,16 @@
 import cProfile
 
 # from game.ai.base.main import InterfaceAI
-from project.game.ai.Shanten import Shanten
+from Shanten import Shanten
 from mahjong.tile import TilesConverter
 # from mahjong.meld import Meld
 # from mahjong.utils import is_man, is_pin, is_sou, is_pon, is_chi
 # from mahjong.hand_calculating.divider import HandDivider
 import numpy as np
+import re
+
+import time
+import csv
 
 shantenCalc = Shanten()
 shdict = {}
@@ -146,5 +150,26 @@ hidden_34 = np.array([4] * 34) - np.array(closed_tiles_34) - np.array(table_34)
 # draw = np.random.choice(34, p=draw_p)
 
 
-cProfile.run('print(out_search(tiles_34, closed_tiles_34, hidden_34, 2, shanten - 1))')
+
+# cProfile.run('print(out_search(tiles_34, closed_tiles_34, hidden_34, 3, shanten - 1))')
 # print(out_search(tiles_34, closed_tiles_34, hidden_34, 2, shanten - 1))
+
+
+# def uniqid():
+#     from time import time
+#     return hex(int(time() * 10000000))[2:]
+#
+# id = uniqid()
+#
+# row = [time.ctime(), time.time(), 'bbb', 'bbb']
+# with open('templog.csv', 'a') as f:
+#     w = csv.writer(f)
+#     w.writerow(row)
+
+# cProfile.run('shantenCalc.calculate_shanten(tiles_34, None)')
+
+
+result = re.findall(r'{}="([^"]*)"'.format('who'), '<PROF lobby="0" type="1" add="-20.0,0,0,1,0,0,9,3,2,6,0"/> <AGARI ba="0,0" hai="2,6,8,12,17,23,27,29,35,42,46,51,76,77" machi="51" ten="30,7700,0" yaku="7,1,24,2,52,1" doraHai="44,60" who="0" fromWho="1" sc="280,-77,267,77,192,0,261,0" owari="203,-20.0,344,45.0,192,-31.0,261,6.0" />')
+print(result[0] == 0 and 1 or 0)
+
+
