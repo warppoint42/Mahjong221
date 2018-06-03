@@ -2,6 +2,7 @@
 import datetime
 import logging
 import socket
+import csv
 from threading import Thread
 from time import sleep
 from urllib.parse import quote
@@ -16,6 +17,8 @@ from tenhou.decoder import TenhouDecoder
 from utils.settings_handler import settings
 from utils.statistics import Statistics
 
+
+
 logger = logging.getLogger('tenhou')
 
 
@@ -29,6 +32,8 @@ class TenhouClient(Client):
     keep_alive_thread = None
     reconnected_messages = None
 
+    game_id = ''
+
     decoder = TenhouDecoder()
 
     _count_of_empty_messages = 0
@@ -39,6 +44,11 @@ class TenhouClient(Client):
         super().__init__()
         self.statistics = Statistics()
         self._socket_mock = socket_mock
+        self.game_id = str(self.uniqid())
+
+    def uniqid(self):
+        from time import time
+        return hex(int(time() * 10000000))[2:]
 
     def connect(self):
         # for reproducer
@@ -114,6 +124,7 @@ class TenhouClient(Client):
             return False
 
     def start_game(self):
+        self.game_id = str(self.uniqid())
         log_link = ''
 
         # play in private or tournament lobby
@@ -324,6 +335,23 @@ class TenhouClient(Client):
                     self._send_message('<NEXTREADY />')
                     logger.debug(message)
 
+
+                    # AI version, game_id, agari (0 if ryuukyoku), won, fed, riichi
+                    row = [settings.AI_CLASS.version, self.game_id]
+                    if '<AGARI' in message:
+                        row.append(1)
+                        row.extend(self.decoder.parse_won_fed(message))
+                    else:
+                        row.extend((0,0,0))
+                    if self.player.in_riichi:
+                        row.append(1)
+                    else:
+                        row.append(0)
+                    with open('roundlog.csv', 'a') as f:
+                        w = csv.writer(f)
+                        w.writerow(row)
+
+
                 # set was called
                 if '<N who=' in message:
                     player_formatted_hand = ''
@@ -438,6 +466,12 @@ class TenhouClient(Client):
                 return
 
         logger.info('Final results: {}'.format(self.table.get_players_sorted_by_scores()))
+
+        row = [settings.AI_CLASS.version, self.game_id]
+        row.extend(self.table.get_players_sorted_by_scores())
+        with open('owari.csv', 'a') as f:
+            w = csv.writer(f)
+            w.writerow(row)
 
         # we need to finish the game, and only after this try to send statistics
         # if order will be different, tenhou will return 404 on log download endpoint
