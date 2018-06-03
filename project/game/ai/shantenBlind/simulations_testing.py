@@ -5,7 +5,7 @@
 import cProfile
 
 # from game.ai.base.main import InterfaceAI
-from mahjong.shanten import Shanten
+from project.game.ai.Shanten import Shanten
 from mahjong.tile import TilesConverter
 # from mahjong.meld import Meld
 # from mahjong.utils import is_man, is_pin, is_sou, is_pon, is_chi
@@ -127,7 +127,7 @@ def out_search(tiles_34, closed_tiles_34, hidden_34, depth, shanten):
 
 closed_tiles_34 = TilesConverter.string_to_34_array(sou='347', pin='469', man='459', honors='2567')
 tiles_34 = TilesConverter.string_to_34_array(sou='347', pin='469', man='459', honors='2567')
-table_34 = [3] * 34
+table_34 = [0] * 34
 shanten = 5
 
 
@@ -146,5 +146,5 @@ hidden_34 = np.array([4] * 34) - np.array(closed_tiles_34) - np.array(table_34)
 # draw = np.random.choice(34, p=draw_p)
 
 
-cProfile.run('print(out_search(tiles_34, closed_tiles_34, hidden_34, 3, shanten - 1))')
-# print(out_search(tiles_34, closed_tiles_34, hidden_34, 3, shanten - 1))
+cProfile.run('print(out_search(tiles_34, closed_tiles_34, hidden_34, 2, shanten - 1))')
+# print(out_search(tiles_34, closed_tiles_34, hidden_34, 2, shanten - 1))

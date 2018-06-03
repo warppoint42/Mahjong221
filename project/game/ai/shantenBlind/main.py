@@ -4,11 +4,13 @@ import logging
 import copy
 
 from game.ai.base.main import InterfaceAI
-from mahjong.shanten import Shanten
+# from mahjong.shanten import Shanten
+from game.ai.Shanten import Shanten
 from mahjong.tile import TilesConverter
 from mahjong.meld import Meld
 from mahjong.utils import is_man, is_pin, is_sou, is_pon, is_chi
 from mahjong.hand_calculating.divider import HandDivider
+from mahjong.agari import Agari
 import numpy as np
 
 logger = logging.getLogger('ai')
@@ -25,11 +27,13 @@ class ImplementationAI(InterfaceAI):
 
     shanten = None
     agari = None
+    shdict = {}
 
     def __init__(self, player):
         super(ImplementationAI, self).__init__(player)
         self.shanten = Shanten()
         self.hand_divider = HandDivider()
+        self.agari = Agari()
 
     # TODO: Merge all discard functions into one to prevent code reuse and unnecessary duplication of variables
     def discard_tile(self, discard_tile):
@@ -61,13 +65,14 @@ class ImplementationAI(InterfaceAI):
 
         results2 = []
 
+        self.shdict = {}
         for shanten, tile in results:
             if shanten != minshanten:
                 continue
             h = self.calculate_outs(tile, shanten)
             results2.append((h, tile))
 
-        (h, discard_34) = min(results2)
+        (h, discard_34) = max(results2)
 
         discard_136 = TilesConverter.find_34_tile_in_136_array(discard_34, self.player.closed_hand)
 
@@ -79,15 +84,17 @@ class ImplementationAI(InterfaceAI):
         logger.info('Discard heuristic:' + str(h))
         return discard_136
 
-    def calculate_outs(self, discard_34, shanten, depth = 3):
+    def calculate_outs(self, discard_34, shanten, depth=2):
         closed_tiles_34 = TilesConverter.to_34_array(self.player.closed_hand)
-        table_34 = copy.deepcopy(self.table.revealed_tiles)
+        table_34 = list(self.table.revealed_tiles)
         tiles_34 = TilesConverter.to_34_array(self.player.tiles)
         table_34[discard_34] += 1
         closed_tiles_34[discard_34] -= 1
         tiles_34[discard_34] -= 1
 
         hidden_34 = np.array([4] * 34) - np.array(closed_tiles_34) - np.array(table_34)
+
+        # print(hidden_34)
 
         # want to sample? use this
         # reveal_num = sum(hidden_34)
@@ -96,10 +103,22 @@ class ImplementationAI(InterfaceAI):
 
         return self.out_search(tiles_34, closed_tiles_34, hidden_34, depth, shanten - 1)
 
-    def out_search(self, tiles_34, closed_tiles_34, hidden_34, depth, shanten):
+    def calculate_outs_meld(self, discard_34, shanten, tiles_34, closed_tiles_34, open_hand_34, depth=2):
+        table_34 = list(self.table.revealed_tiles)
+        tiles_34 = copy.deepcopy(tiles_34)
+        closed_tiles_34 = copy.deepcopy(closed_tiles_34)
+        table_34[discard_34] += 1
+        closed_tiles_34[discard_34] -= 1
+        tiles_34[discard_34] -= 1
+
+        hidden_34 = np.array([4] * 34) - np.array(closed_tiles_34) - np.array(table_34)
+
+        return self.out_search(tiles_34, closed_tiles_34, hidden_34, depth, shanten - 1, open_hand_34)
+
+    def out_search(self, tiles_34, closed_tiles_34, hidden_34, depth, shanten, open_hand_34=None):
         outs = 0
         for i in range(34):
-            if hidden_34[i] == 0:
+            if hidden_34[i] <= 0:
                 continue
             ct = hidden_34[i]
 
@@ -108,26 +127,39 @@ class ImplementationAI(InterfaceAI):
             closed_tiles_34[i] += 1
             tiles_34[i] += 1
 
-            for tile in range(0, 34):
-                # Can the tile be discarded from the concealed hand?
-                if not closed_tiles_34[tile]:
-                    continue
+            if self.agari.is_agari(tiles_34, open_hand_34):
+                outs += 2
+            else:
+                for tile in range(0, 34):
+                    # Can the tile be discarded from the concealed hand?
+                    if not closed_tiles_34[tile]:
+                        continue
 
-                # discard the tile from hand
-                closed_tiles_34[tile] -= 1
-                tiles_34[tile] -= 1
+                    # discard the tile from hand
+                    closed_tiles_34[tile] -= 1
+                    tiles_34[tile] -= 1
 
-                # calculate shanten and add outs if appropriate
-                sh = self.shanten.calculate_shanten(tiles_34, self.player.open_hand_34_tiles)
-                if sh == shanten:
-                    if depth <= 1 or shanten == -1:
-                        outs += 1
+                    tuple_34 = tuple(tiles_34)
+                    # calculate shanten and add outs if appropriate
+                    if tuple_34 in self.shdict.keys():
+                        sh = self.shdict[tuple_34]
                     else:
-                        outs += ct * self.out_search(tiles_34, closed_tiles_34, hidden_34, depth - 1, shanten - 1)
+                        if open_hand_34 is None:
+                            sh = self.shanten.calculate_shanten(tiles_34, self.player.open_hand_34_tiles)
+                        else:
+                            sh = self.shanten.calculate_shanten(tiles_34, open_hand_34)
+                        self.shdict[tuple_34] = sh
+                    if sh == shanten:
+                        if depth <= 1 or shanten == -1:
+                            outs += 1
+                        else:
+                            outs += ct * self.out_search(tiles_34, closed_tiles_34, hidden_34, depth - 1, shanten - 1)
+                    if sh == shanten + 1:
+                        outs += 0.01
 
-                # return tile to hand
-                closed_tiles_34[tile] += 1
-                tiles_34[tile] += 1
+                    # return tile to hand
+                    closed_tiles_34[tile] += 1
+                    tiles_34[tile] += 1
 
             # return tile from closed hand to hidden
             hidden_34[i] += 1
@@ -137,8 +169,8 @@ class ImplementationAI(InterfaceAI):
         return outs
 
     def should_call_riichi(self):
-        if len(self.player.open_hand_34_tiles) != 0:
-            return False
+        # if len(self.player.open_hand_34_tiles) != 0:
+        #     return False
         return True
         # tiles_34 = TilesConverter.to_34_array(self.player.tiles)
         # shanten = self.shanten.calculate_shanten(tiles_34, None)
@@ -343,8 +375,19 @@ class ImplementationAI(InterfaceAI):
             # return tile to hand
             tiles_34[tile] += 1
 
-        (shanten, discard_34) = min(results)
+        (minshanten, discard_34) = min(results)
+
+        results2 = []
+
+        self.shdict = {}
+        for shanten, tile in results:
+            if shanten != minshanten:
+                continue
+            h = self.calculate_outs_meld(tile, shanten, tiles_34, closed_tiles_34, open_hand_34)
+            results2.append((h, tile))
+
+        (h, discard_34) = max(results2)
 
         discard_136 = TilesConverter.find_34_tile_in_136_array(discard_34, self.player.closed_hand)
 
-        return shanten, discard_136
+        return minshanten, discard_136
