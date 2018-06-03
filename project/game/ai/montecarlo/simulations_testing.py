@@ -6,7 +6,7 @@ Created on Thu May 24 00:10:46 2018
 @author: nantanick
 """
 
-from mahjong.shanten import Shanten
+from Shanten import Shanten
 from mahjong.agari import Agari #checks for hands
 from mahjong.tile import TilesConverter
 from mahjong.meld import Meld
