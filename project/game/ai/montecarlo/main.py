@@ -7,7 +7,8 @@ from mahjong.shanten import Shanten
 from mahjong.agari import Agari
 from mahjong.tile import TilesConverter
 from mahjong.meld import Meld
-from mahjong.utils import is_man, is_pin, is_sou, is_pon, is_chi
+import numpy as np
+
 
 logger = logging.getLogger('ai')
 
@@ -28,6 +29,36 @@ class ImplementationAI(InterfaceAI):
         super(ImplementationAI, self).__init__(player)
         self.shanten = Shanten()
         self.agari = Agari()
+        
+    
+    def simulate(self, hand, hand_open, unaccounted_tiles):
+        """
+        #simulation
+    
+        hand, hand_open -- hand in 34 format
+        unaccounted_tiles -- all the unused tiles in 34 format
+        turn -- a number from 0-3 (0 is the player)
+        """
+                
+        hand = list(hand)
+        unaccounted = list(unaccounted_tiles)
+        tiles_left = sum(unaccounted_tiles)
+        unaccounted_nonzero = np.nonzero(unaccounted)
+        #14 in dead wall 13*3= 39 in other hand -> total 53
+        shanten_sum = 0
+        for i in range(min(tiles_left, 17)):
+            unaccounted_nonzero = np.nonzero(unaccounted)[0] #get a random card
+            draw_tile = random.choice(unaccounted_nonzero)
+            unaccounted[draw_tile] -= 1
+            hand[draw_tile] +=1
+            shanten = self.shanten.calculate_shanten(hand, hand_open)
+            if shanten <= 0:#if tenpai
+                break
+            shanten_sum += shanten**2
+            hand_nonzero = np.nonzero(hand)[0] #discard something random
+            discard = random.choice(hand_nonzero)
+            hand[discard] -= 1
+        return shanten_sum
 
     def discard_tile(self, discard_tile):
         tiles_34 = TilesConverter.to_34_array(self.player.tiles)
@@ -35,23 +66,25 @@ class ImplementationAI(InterfaceAI):
         # is_agari = self.agari.is_agari(tiles_34, self.player.open_hand_34_tiles)
 
         results = []
-
+        
         for tile in range(0,34):
             #Can the tile be discarded from the concealed hand?
             if not closed_tiles_34[tile]:
                 continue
-
+            
+            unaccounted = (np.array([4]*34) - tiles_34)\
+                - TilesConverter.to_34_array(self.table.revealed_tiles)
             #discard the tile from hand
-            tiles_34[tile] -= 1
+            closed_tiles_34[tile] -= 1
 
             #calculate shanten and store
-            shanten = self.shanten.calculate_shanten(tiles_34, self.player.open_hand_34_tiles)
-            results.append((shanten, tile))
+            sim_util = sum(self.simulate(closed_tiles_34, self.player.open_hand_34_tiles, unaccounted) for _ in range(200))
+            results.append((sim_util, tile))
 
             # return tile to hand
-            tiles_34[tile] += 1
+            closed_tiles_34[tile] += 1
 
-        (shanten, discard_34) = min(results)
+        (sim_util, discard_34) = min(results)
 
         discard_136 = TilesConverter.find_34_tile_in_136_array(discard_34, self.player.closed_hand)
 
@@ -59,16 +92,17 @@ class ImplementationAI(InterfaceAI):
             logger.debug('Greedy search or tile conversion failed')
             discard_136 = random.randrange(len(self.player.tiles) - 1)
             discard_136 = self.player.tiles[discard_136]
-        logger.debug('Shanten after discard:' + str(shanten))
+        logger.debug('Utility after discard:' + str(sim_util))
         return discard_136
     
 
     def should_call_riichi(self):
-        if len(self.player.open_hand_34_tiles) != 0:
-            return False
-        tiles_34 = TilesConverter.to_34_array(self.player.tiles)
-        shanten = self.shanten.calculate_shanten(tiles_34, None)
-        return shanten == 0
+        return True
+#        if len(self.player.open_hand_34_tiles) != 0:
+#            return False
+#        tiles_34 = TilesConverter.to_34_array(self.player.tiles)
+#        shanten = self.shanten.calculate_shanten(tiles_34, None)
+#        return shanten == 0
 
     def should_call_win(self, tile, enemy_seat):
         return True
