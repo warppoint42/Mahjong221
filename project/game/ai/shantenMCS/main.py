@@ -50,7 +50,7 @@ class ImplementationAI(InterfaceAI):
         unaccounted_nonzero = np.nonzero(unaccounted)[0] #get a random card
         draw_tile = random.choice(unaccounted_nonzero)
         unaccounted[draw_tile] -= 1
-        hand[draw_tile] +=1
+        hand[draw_tile] += 1
         return self.shanten.calculate_shanten(hand, hand_open)
 
     # TODO: Merge all discard functions into one to prevent code reuse and unnecessary duplication of variables
@@ -89,7 +89,9 @@ class ImplementationAI(InterfaceAI):
         for shanten, tile in results:
             if shanten != minshanten:
                 continue
-            h = sum(self.simulate_single(closed_tiles_34, self.player.open_hand_34_tiles, unaccounted) for _ in range(200))
+            tiles_34[tile] -= 1
+            h = sum(self.simulate_single(tiles_34, self.player.open_hand_34_tiles, unaccounted) for _ in range(10000))
+            tiles_34[tile] += 1
             results2.append((h, tile))
 
         (h, discard_34) = min(results2)
@@ -407,7 +409,9 @@ class ImplementationAI(InterfaceAI):
         for shanten, tile in results:
             if shanten != minshanten:
                 continue
-            h = sum(self.simulate_single(closed_tiles_34, open_hand_34, unaccounted) for _ in range(200))
+            tiles_34[tile] -= 1
+            h = sum(self.simulate_single(tiles_34, open_hand_34, unaccounted) for _ in range(10000))
+            tiles_34[tile] += 1
             results2.append((h, tile))
 
         (h, discard_34) = min(results2)

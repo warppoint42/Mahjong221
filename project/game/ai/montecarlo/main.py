@@ -1,4 +1,4 @@
-h# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import random
 import logging
 import copy
@@ -100,7 +100,9 @@ class ImplementationAI(InterfaceAI):
         for shanten, tile in results:
             if shanten != minshanten:
                 continue
-            h = sum(self.simulate(closed_tiles_34, self.player.open_hand_34_tiles, unaccounted) for _ in range(200))
+            tiles_34[tile] -= 1
+            h = sum(self.simulate(tiles_34, self.player.open_hand_34_tiles, unaccounted) for _ in range(200))
+            tiles_34[tile] += 1
             results2.append((h, tile))
 
         (h, discard_34) = min(results2)
@@ -418,7 +420,9 @@ class ImplementationAI(InterfaceAI):
         for shanten, tile in results:
             if shanten != minshanten:
                 continue
-            h = sum(self.simulate(closed_tiles_34, open_hand_34, unaccounted) for _ in range(200))
+            tiles_34[tile] -= 1
+            h = sum(self.simulate(tiles_34, open_hand_34, unaccounted) for _ in range(200))
+            tiles_34[tile] += 1
             results2.append((h, tile))
 
         (h, discard_34) = min(results2)
