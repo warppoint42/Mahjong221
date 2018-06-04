@@ -90,7 +90,7 @@ class ImplementationAI(InterfaceAI):
             if shanten != minshanten:
                 continue
             tiles_34[tile] -= 1
-            h = sum(self.simulate_single(tiles_34, self.player.open_hand_34_tiles, unaccounted) for _ in range(10000))
+            h = sum(self.simulate_single(tiles_34, self.player.open_hand_34_tiles, unaccounted) for _ in range(1000))
             tiles_34[tile] += 1
             results2.append((h, tile))
 
